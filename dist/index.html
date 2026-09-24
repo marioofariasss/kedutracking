@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rastreio de leads | Kedu</title>
+<meta name="description" content="Painel de atribuição e performance de leads da Kedu.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2313233F'/%3E%3Cpath d='M17 14v36h8V35l13 15h11L32 31l16-17H37L25 28V14z' fill='%23B8892B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#13233F; --ink-2:#2A3B5C; --paper:#F3F5F8; --card:#FFFFFF; --line:#DCE1E9; --muted:#5A6478;
+  --gold:#B8892B; --gold-soft:#F4EAD4;
+  --go:#1B7F6B; --go-soft:#DDF0EB; --stop:#B3412E; --stop-soft:#F6E1DC; --wait:#94651A; --wait-soft:#F5EAD6;
+  --keep:#43516B; --keep-soft:#E6EAF1;
+  --r:6px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 "Archivo",system-ui,sans-serif;font-variation-settings:"wdth" 100}
+.num{font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+a{color:var(--ink)}
+
+/* barra superior */
+.top{background:var(--ink);color:#fff}
+.top-in{max-width:1280px;margin:0 auto;padding:18px 24px 16px;display:flex;flex-wrap:wrap;gap:16px 24px;align-items:end;justify-content:space-between}
+.brand{font-weight:700;font-size:20px;font-variation-settings:"wdth" 118;letter-spacing:.2px}
+.brand span{color:var(--gold)}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.filters label{display:flex;flex-direction:column;font-size:12px;color:#B9C3D6;gap:4px}
+.filters input,.filters select{background:var(--ink-2);border:1px solid #3B4D70;color:#fff;border-radius:var(--r);padding:7px 9px;min-width:120px}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:var(--r);padding:7px 14px}
+.btn-gold{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600}
+.btn-ghost{background:transparent;border-color:#3B4D70;color:#fff}
+
+.health{max-width:1280px;margin:0 auto;padding:0 24px 14px;display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:#B9C3D6}
+.health b{color:#fff;font-weight:500}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:#4FB39A}
+.dot.bad{background:#E06A52}
+.demo-note{max-width:1280px;margin:0 auto 18px;padding:10px 14px;background:var(--gold-soft);border:1px solid #DFC894;border-radius:var(--r);color:#624914;font-size:14px}
+
+main{max-width:1280px;margin:0 auto;padding:24px}
+section{margin-bottom:36px}
+h2{font-size:18px;font-weight:600;margin:0 0 4px;font-variation-settings:"wdth" 110}
+.hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+
+/* números principais */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border:1px solid var(--line);background:var(--card);border-radius:var(--r)}
+.kpi{padding:16px 18px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:0}
+.kpi .l{font-size:13px;color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:600;font-variation-settings:"wdth" 108;line-height:1.2}
+.kpi .s{font-size:12px;color:var(--muted)}
+
+/* tabelas */
+.tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:12.5px;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:#FAFBFC}
+th.sort{cursor:pointer}
+th.sort:hover{color:var(--ink)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.sub{display:block;font-size:12px;color:var(--muted)}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:#F7F9FB}
+
+/* veredito: a peça central do painel */
+tr.v-escalar td:first-child{box-shadow:inset 4px 0 0 var(--go)}
+tr.v-pausar td:first-child{box-shadow:inset 4px 0 0 var(--stop)}
+tr.v-aguardar td:first-child{box-shadow:inset 4px 0 0 var(--wait)}
+tr.v-manter td:first-child{box-shadow:inset 4px 0 0 var(--keep)}
+.tag{display:inline-block;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.t-escalar{background:var(--go-soft);color:var(--go)}
+.t-pausar{background:var(--stop-soft);color:var(--stop)}
+.t-aguardar{background:var(--wait-soft);color:var(--wait)}
+.t-manter{background:var(--keep-soft);color:var(--keep)}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:12px}
+.toolbar label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
+.toolbar input,.toolbar select{border:1px solid var(--line);background:var(--card);border-radius:var(--r);padding:6px 9px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--card)}
+.seg button{border:0;background:transparent;padding:6px 12px;font-size:13px}
+.seg button.on{background:var(--ink);color:#fff}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}.kpi{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* mapa de calor */
+.heat{display:grid;grid-template-columns:44px repeat(10,minmax(0,1fr));gap:3px;font-size:12px;color:var(--muted)}
+.heat .c{height:30px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11.5px}
+.heat .h{text-align:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+
+/* ficha do lead */
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(460px,100%);background:var(--card);border-left:1px solid var(--line);box-shadow:-12px 0 30px rgba(19,35,63,.12);transform:translateX(105%);transition:transform .22s ease;z-index:20;overflow-y:auto;padding:22px}
+.drawer.open{transform:none}
+@media (prefers-reduced-motion:reduce){.drawer{transition:none}}
+.tl{list-style:none;margin:16px 0 0;padding:0 0 0 16px;border-left:2px solid var(--line)}
+.tl li{position:relative;padding:0 0 16px 6px}
+.tl li::before{content:"";position:absolute;left:-23px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--card);border:2px solid var(--muted)}
+.tl li.etapa::before{background:var(--gold);border-color:var(--gold)}
+.tl .when{font-size:12px;color:var(--muted)}
+.tl .t{font-weight:600}
+.tl .d{font-size:13px;color:var(--muted)}
+dl.facts{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;font-size:14px;margin:14px 0}
+dl.facts dt{color:var(--muted)}
+dl.facts dd{margin:0}
+
+/* login */
+.login{max-width:360px;margin:12vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px}
+.login label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:4px;margin-bottom:12px}
+.login input{border:1px solid var(--line);border-radius:var(--r);padding:9px 10px}
+.err{color:var(--stop);font-size:13px;min-height:18px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.loading{opacity:.55;pointer-events:none}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="login" class="login hidden">
+  <div class="brand" style="color:var(--ink);margin-bottom:18px">Kedu <span>Rastreio</span></div>
+  <label>E-mail<input id="lg-email" type="email" autocomplete="username"></label>
+  <label>Senha<input id="lg-pass" type="password" autocomplete="current-password"></label>
+  <div class="err" id="lg-err"></div>
+  <button class="btn btn-gold" id="lg-btn" style="width:100%">Entrar</button>
+</div>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">Kedu <span>Rastreio de leads</span></div>
+      <div class="filters">
+        <label>De<input type="date" id="f-de"></label>
+        <label>Até<input type="date" id="f-ate"></label>
+        <label>Canal<select id="f-canal"><option value="">Todos</option></select></label>
+        <label>Atribuição<select id="f-modelo">
+          <option value="ft">Primeiro toque</option>
+          <option value="lp">Último toque pago</option>
+        </select></label>
+        <label>Sucesso é<select id="f-sucesso"></select></label>
+        <button class="btn btn-gold" id="f-go">Atualizar</button>
+        <button class="btn btn-ghost" id="f-out">Sair</button>
+      </div>
+    </div>
+    <div class="health" id="health"></div>
+  </header>
+
+  <main id="main">
+    <div class="demo-note hidden" id="demo-note"><strong>Versão demonstrativa.</strong> Os números abaixo são exemplos realistas para validar o painel. As integrações ainda precisam das credenciais da Kedu.</div>
+    <section>
+      <div class="kpis" id="kpis"></div>
+      <p class="hint" style="margin-top:8px">As etapas contam os leads que entraram no período, mesmo que tenham avançado depois dele.</p>
+    </section>
+
+    <section>
+      <h2>Criativos, conjuntos e campanhas</h2>
+      <p class="hint">Ordenado pelo gasto. O veredito compara o custo por sucesso com a sua meta.</p>
+      <div class="toolbar">
+        <div class="seg" id="g-seg">
+          <button data-g="criativo" class="on">Criativo</button><button data-g="conjunto">Conjunto</button><button data-g="campanha">Campanha</button>
+        </div>
+        <label>Meta de custo por sucesso (R$)<input type="number" id="s-meta" min="1" step="1" style="width:120px"></label>
+        <label>Gasto mínimo para julgar (R$)<input type="number" id="s-min" min="0" step="1" style="width:120px"></label>
+      </div>
+      <div class="tbl-wrap"><table id="rank"></table></div>
+    </section>
+
+    <section>
+      <h2>Funil por canal</h2>
+      <p class="hint">Quantos leads de cada canal chegaram a cada etapa, e quanto custou.</p>
+      <div class="tbl-wrap"><table id="funil"></table></div>
+    </section>
+
+    <section class="grid2">
+      <div>
+        <h2>Quando os leads chegam</h2>
+        <p class="hint">Dia da semana e horário de entrada, no fuso de Fortaleza.</p>
+        <div class="toolbar"><div class="seg" id="h-seg"><button data-h="leads" class="on">Leads</button><button data-h="sucesso">Sucessos</button></div></div>
+        <div class="card"><div class="heat" id="heat"></div></div>
+      </div>
+      <div>
+        <h2>Por dia</h2>
+        <p class="hint">Leads e sucessos pela data de entrada.</p>
+        <div class="card" style="height:300px"><canvas id="trend"></canvas></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Leads</h2>
+      <div class="toolbar">
+        <label>Buscar<input id="l-q" placeholder="Escola, telefone, campanha" style="width:260px"></label>
+        <button class="btn" id="l-csv">Exportar CSV</button>
+      </div>
+      <div class="tbl-wrap"><table id="leads"></table></div>
+      <div style="text-align:center;margin-top:12px"><button class="btn hidden" id="l-more">Mostrar mais</button></div>
+    </section>
+  </main>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="Ficha do lead">
+  <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+    <div><h2 id="d-nome" style="margin:0"></h2><div class="sub" id="d-sub"></div></div>
+    <button class="btn" id="d-close" aria-label="Fechar ficha">Fechar</button>
+  </div>
+  <dl class="facts" id="d-facts"></dl>
+  <h2 style="font-size:15px">Linha do tempo</h2>
+  <ul class="tl" id="d-tl"></ul>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// =====================================================================
+// CONFIGURAÇÃO: preencha com os dados do projeto Supabase
+// (a chave anon é pública; os dados só aparecem para quem faz login)
+// =====================================================================
+const SUPABASE_URL = "https://SEU_PROJETO.supabase.co";
+const SUPABASE_ANON_KEY = "SUA_CHAVE_ANON";
+const DEMO = SUPABASE_URL.includes("SEU_PROJETO") || SUPABASE_ANON_KEY === "SUA_CHAVE_ANON";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = (id) => document.getElementById(id);
+const TZ = "America/Fortaleza";
+const PAGOS = ["Meta Ads", "Google Ads", "Outras mídias pagas"];
+const brl = (v) => v == null || !isFinite(v) ? "-" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: v >= 100 ? 0 : 2 });
+const int = (v) => (v ?? 0).toLocaleString("pt-BR");
+const pct = (a, b) => b ? Math.round(a / b * 100) + "%" : "-";
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDT = (iso) => iso ? new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, dateStyle: "short", timeStyle: "short" }).format(new Date(iso)) : "-";
+
+const S = {
+  etapas: [], leads: [], costs: [], saude: [],
+  grupo: "criativo", heat: "leads", sort: { k: "gasto", dir: -1 }, shown: 100,
+  cfg: JSON.parse(localStorage.getItem("kt_cfg") || '{"meta":400,"min":400}'),
+};
+let chart;
+
+function demoData() {
+  const now = new Date();
+  const iso = (days, hour) => {
+    const d = new Date(now); d.setDate(d.getDate() - days); d.setHours(hour, 15, 0, 0); return d.toISOString();
+  };
+  const etapas = [
+    { nome: "Lead", ordem: 10 }, { nome: "Qualificado", ordem: 20 },
+    { nome: "Agendado", ordem: 30 }, { nome: "Proposta", ordem: 40 },
+    { nome: "Cliente", ordem: 50 }, { nome: "Perdido", ordem: 90 },
+  ];
+  const base = [
+    ["Colégio Horizonte", "Marina", "Meta Ads", "Gestão sem planilhas", "Diretores CE", "Vídeo — rotina financeira", 1, 9, "Cliente", "Ana"],
+    ["Escola Raízes", "Carlos", "Google Ads", "Software gestão escolar", "Pesquisa", "Gestão escolar completa", 2, 10, "Proposta", "Bruno"],
+    ["Colégio Farol", "Renata", "Meta Ads", "Matrículas 2027", "Gestores Nordeste", "Carrossel — inadimplência", 3, 14, "Agendado", "Ana"],
+    ["Instituto Saber", "Paulo", "Orgânico", "Busca de marca", "—", "—", 4, 11, "Qualificado", "Diego"],
+    ["Escola Integração", "Lívia", "Google Ads", "ERP escolar", "Pesquisa", "Automação financeira", 5, 15, "Agendado", "Bruno"],
+    ["Colégio Novo Tempo", "Fernanda", "Meta Ads", "Gestão sem planilhas", "Diretores CE", "Vídeo — rotina financeira", 6, 18, "Proposta", "Ana"],
+    ["Centro Educacional Viva", "Rafael", "Indicação", "—", "—", "—", 7, 13, "Qualificado", "Diego"],
+    ["Escola Caminhos", "Joana", "Meta Ads", "Inadimplência escolar", "Mantenedores", "Depoimento — Colégio Alfa", 8, 20, "Agendado", "Ana"],
+    ["Colégio Evolução", "Marcelo", "Google Ads", "Software gestão escolar", "Pesquisa", "Gestão escolar completa", 9, 8, "Perdido", "Bruno"],
+    ["Instituto Aprender", "Aline", "Direto", "—", "—", "—", 10, 16, "Lead", "Diego"],
+    ["Escola Monte Azul", "Igor", "Meta Ads", "Matrículas 2027", "Gestores Nordeste", "Carrossel — inadimplência", 11, 9, "Qualificado", "Ana"],
+    ["Colégio Essencial", "Bianca", "Google Ads", "ERP escolar", "Pesquisa", "Automação financeira", 12, 14, "Cliente", "Bruno"],
+    ["Escola Primeiros Passos", "Luciana", "Meta Ads", "Inadimplência escolar", "Mantenedores", "Depoimento — Colégio Alfa", 13, 19, "Proposta", "Ana"],
+    ["Colégio Conquista", "André", "Orgânico", "Conteúdo", "—", "—", 14, 10, "Agendado", "Diego"],
+    ["Instituto Educare", "Patrícia", "Meta Ads", "Gestão sem planilhas", "Diretores CE", "Vídeo — rotina financeira", 15, 17, "Qualificado", "Ana"],
+    ["Escola Crescer", "Henrique", "Google Ads", "Software gestão escolar", "Pesquisa", "Gestão escolar completa", 16, 11, "Lead", "Bruno"],
+    ["Colégio Ponto de Luz", "Mônica", "Meta Ads", "Matrículas 2027", "Gestores Nordeste", "Carrossel — inadimplência", 17, 15, "Perdido", "Ana"],
+    ["Escola Futuro", "Samuel", "Meta Ads", "Inadimplência escolar", "Mantenedores", "Depoimento — Colégio Alfa", 18, 9, "Agendado", "Ana"],
+  ];
+  const rank = Object.fromEntries(etapas.map((e) => [e.nome, e.ordem]));
+  const leads = base.map((r, i) => {
+    const [escola, nome, canal, campanha, conjunto, criativo, days, hour, etapa, executivo] = r;
+    const stages = { Lead: iso(days, hour) };
+    for (const e of etapas.filter((x) => x.nome !== "Perdido" && x.ordem <= (rank[etapa] || 0))) stages[e.nome] = iso(Math.max(0, days - Math.floor(e.ordem / 18)), hour + 1);
+    if (etapa === "Perdido") stages.Perdido = iso(Math.max(0, days - 2), hour + 1);
+    const paid = canal === "Meta Ads" || canal === "Google Ads";
+    return {
+      id: `demo-${i + 1}`, created_at: iso(days, hour), escola, nome,
+      telefone_e164: `+55859999${String(1200 + i).padStart(4, "0")}`, email: `${nome.toLowerCase()}@exemplo.com.br`,
+      ft_canal: canal, ft_campanha: campanha, ft_conjunto: conjunto, ft_criativo: criativo,
+      ft_ad_id: paid ? `${canal === "Meta Ads" ? "meta" : "google"}:${10001 + (i % 6)}` : null,
+      lp_canal: paid ? canal : null, lp_campanha: paid ? campanha : null, lp_conjunto: paid ? conjunto : null,
+      lp_criativo: paid ? criativo : null, lp_ad_id: paid ? `${canal === "Meta Ads" ? "meta" : "google"}:${10001 + (i % 6)}` : null,
+      etapas: stages, executivo, ploomes_deal_id: etapa !== "Lead" ? 8400 + i : null,
+    };
+  });
+  const costs = [
+    ["meta", "meta:10001", "Gestão sem planilhas", "Diretores CE", "Vídeo — rotina financeira", 1650],
+    ["meta", "meta:10003", "Matrículas 2027", "Gestores Nordeste", "Carrossel — inadimplência", 1230],
+    ["meta", "meta:10006", "Inadimplência escolar", "Mantenedores", "Depoimento — Colégio Alfa", 910],
+    ["google", "google:10002", "Software gestão escolar", "Pesquisa", "Gestão escolar completa", 1380],
+    ["google", "google:10005", "ERP escolar", "Pesquisa", "Automação financeira", 760],
+  ].map(([plataforma, ad_id, campanha, conjunto, criativo, gasto], i) => ({ plataforma, ad_id, campanha, conjunto, criativo, gasto, dia: iso(i + 1, 12).slice(0, 10) }));
+  const saude = ["site", "whatsapp", "ploomes", "forms"].map((source, i) => ({ source, ultimo_evento: iso(0, new Date().getHours() - i), erros_7d: 0 }));
+  return { etapas, leads, costs, saude };
+}
+
+// ------------------------------------------------------------ dados
+async function fetchAll(build) {
+  const out = []; const size = 1000;
+  for (let from = 0; ; from += size) {
+    const { data, error } = await build().range(from, from + size - 1);
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < size) break;
+  }
+  return out;
+}
+
+async function load() {
+  document.body.classList.add("loading");
+  try {
+    if (DEMO) {
+      Object.assign(S, demoData(), { shown: 100 });
+      fillSelects(); render(); return;
+    }
+    const de = $("f-de").value, ate = $("f-ate").value;
+    const ateMais1 = new Date(new Date(ate + "T00:00:00-03:00").getTime() + 86400000).toISOString();
+    const [etapas, leads, costs, saude] = await Promise.all([
+      fetchAll(() => sb.from("v_etapas").select("*")),
+      fetchAll(() => sb.from("v_leads").select("*").gte("created_at", new Date(de + "T00:00:00-03:00").toISOString()).lt("created_at", ateMais1).order("created_at", { ascending: false })),
+      fetchAll(() => sb.from("v_costs").select("*").gte("dia", de).lte("dia", ate)),
+      fetchAll(() => sb.from("v_saude").select("*")),
+    ]);
+    Object.assign(S, { etapas, leads, costs, saude, shown: 100 });
+    fillSelects();
+    render();
+  } catch (e) {
+    alert("Não foi possível carregar os dados: " + (e.message || e));
+  } finally {
+    document.body.classList.remove("loading");
+  }
+}
+
+// --------------------------------------------------------- regras
+const ordemDe = (nome) => S.etapas.find((e) => e.nome === nome)?.ordem ?? 0;
+function maxOrdem(lead) {
+  let m = -1;
+  for (const k of Object.keys(lead.etapas || {})) if (k !== "Perdido") m = Math.max(m, ordemDe(k));
+  return m;
+}
+const chegou = (lead, etapa) => !!(lead.etapas && lead.etapas[etapa]) || maxOrdem(lead) >= ordemDe(etapa) && ordemDe(etapa) > 0;
+const sucesso = (lead) => chegou(lead, $("f-sucesso").value);
+function etapaAtual(lead) {
+  const ks = Object.keys(lead.etapas || {});
+  if (!ks.length) return "-";
+  if (ks.includes("Perdido")) return "Perdido";
+  return ks.sort((a, b) => ordemDe(b) - ordemDe(a))[0];
+}
+
+// origem do lead conforme o modelo escolhido
+function origem(l) {
+  if ($("f-modelo").value === "lp" && l.lp_canal) {
+    return { canal: l.lp_canal, ad: l.lp_ad_id, campanha: l.lp_campanha, conjunto: l.lp_conjunto, criativo: l.lp_criativo };
+  }
+  return { canal: l.ft_canal || "Sem origem", ad: l.ft_ad_id, campanha: l.ft_campanha, conjunto: l.ft_conjunto, criativo: l.ft_criativo };
+}
+const canalDoCusto = (c) => c.plataforma === "meta" ? "Meta Ads" : c.plataforma === "google" ? "Google Ads" : "Outras mídias pagas";
+
+function leadsFiltrados() {
+  const canal = $("f-canal").value;
+  return S.leads.filter((l) => !canal || origem(l).canal === canal);
+}
+function custosFiltrados() {
+  const canal = $("f-canal").value;
+  return S.costs.filter((c) => !canal || canalDoCusto(c) === canal);
+}
+
+function veredito(gasto, sucessos) {
+  const meta = Number(S.cfg.meta) || 0, min = Number(S.cfg.min) || 0;
+  if (!gasto) return sucessos ? "manter" : "aguardar";
+  if (!sucessos) return gasto >= 2 * meta ? "pausar" : "aguardar";
+  const cps = gasto / sucessos;
+  if (cps <= meta) return "escalar";
+  if (cps <= 1.5 * meta) return "manter";
+  return gasto >= min ? "pausar" : "aguardar";
+}
+const VEREDITO_TXT = { escalar: "Escalar", manter: "Manter", aguardar: "Aguardar", pausar: "Pausar" };
+
+// --------------------------------------------------------- render
+function fillSelects() {
+  const suc = $("f-sucesso"), atual = suc.value || localStorage.getItem("kt_sucesso") || "Agendado";
+  suc.innerHTML = S.etapas.filter((e) => e.nome !== "Perdido").map((e) => `<option>${esc(e.nome)}</option>`).join("");
+  suc.value = S.etapas.some((e) => e.nome === atual) ? atual : (S.etapas[S.etapas.length - 1]?.nome || "");
+  const can = $("f-canal"), cv = can.value;
+  const canais = [...new Set(S.leads.map((l) => l.ft_canal || "Sem origem").concat(S.leads.map((l) => l.lp_canal).filter(Boolean)))].sort();
+  can.innerHTML = `<option value="">Todos</option>` + canais.map((c) => `<option>${esc(c)}</option>`).join("");
+  can.value = canais.includes(cv) ? cv : "";
+}
+
+function render() {
+  renderHealth(); renderKpis(); renderRank(); renderFunil(); renderHeat(); renderTrend(); renderLeads();
+}
+
+function renderHealth() {
+  const nomes = { site: "Site", whatsapp: "WhatsApp", ploomes: "Ploomes", forms: "Formulários" };
+  $("health").innerHTML = Object.entries(nomes).map(([k, n]) => {
+    const s = S.saude.find((x) => x.source === k);
+    const horas = s ? (Date.now() - new Date(s.ultimo_evento)) / 3600000 : Infinity;
+    const ruim = horas > 24 || (s && s.erros_7d > 0);
+    const txt = !s ? "sem eventos ainda" : `último há ${horas < 1 ? Math.round(horas * 60) + " min" : Math.round(horas) + " h"}` + (s.erros_7d ? `, ${s.erros_7d} erros em 7 dias` : "");
+    return `<span><span class="dot ${ruim ? "bad" : ""}"></span><b>${n}</b> ${txt}</span>`;
+  }).join("");
+}
+
+function renderKpis() {
+  const L = leadsFiltrados(), C = custosFiltrados();
+  const gasto = C.reduce((a, c) => a + Number(c.gasto), 0);
+  const suc = L.filter(sucesso).length;
+  const comOrigem = L.filter((l) => l.ft_canal && !["Direto", "CRM (sem origem)"].includes(l.ft_canal)).length;
+  const pagos = L.filter((l) => PAGOS.includes(origem(l).canal)).length;
+  const et = $("f-sucesso").value;
+  $("kpis").innerHTML = [
+    ["Leads", int(L.length), `${pct(comOrigem, L.length)} com origem identificada`],
+    [et, int(suc), `${pct(suc, L.length)} dos leads`],
+    ["Investido", brl(gasto), `${int(pagos)} leads de mídia paga`],
+    ["Custo por lead pago", brl(pagos ? gasto / pagos : null), "só leads de mídia paga"],
+    [`Custo por ${et.toLowerCase()}`, brl(L.filter((l) => sucesso(l) && PAGOS.includes(origem(l).canal)).length ? gasto / L.filter((l) => sucesso(l) && PAGOS.includes(origem(l).canal)).length : null), "só leads de mídia paga"],
+  ].map(([l, v, s]) => `<div class="kpi"><div class="l">${esc(l)}</div><div class="v num">${v}</div><div class="s">${esc(s)}</div></div>`).join("");
+}
+
+function chaveGrupo(plat, ad, campanha, conjunto, criativo) {
+  if (S.grupo === "campanha") return { k: `${plat}|${campanha || "(sem campanha)"}`, nome: campanha || "(sem campanha)", sub: plat };
+  if (S.grupo === "conjunto") return { k: `${plat}|${campanha}|${conjunto || "(sem conjunto)"}`, nome: conjunto || "(sem conjunto)", sub: campanha || plat };
+  return { k: ad || `${plat}|${criativo || campanha || "(sem id)"}`, nome: criativo || (ad ? `Anúncio ${ad.split(":")[1]}` : "(sem id de anúncio)"), sub: [campanha, conjunto].filter(Boolean).join(" / ") || plat };
+}
+
+function renderRank() {
+  const rows = new Map();
+  const get = (g, canal) => {
+    if (!rows.has(g.k)) rows.set(g.k, { ...g, canal, gasto: 0, leads: 0, suc: 0 });
+    return rows.get(g.k);
+  };
+  for (const c of custosFiltrados()) {
+    const canal = canalDoCusto(c);
+    get(chaveGrupo(canal, c.ad_id, c.campanha, c.conjunto, c.criativo), canal).gasto += Number(c.gasto);
+  }
+  for (const l of leadsFiltrados()) {
+    const o = origem(l);
+    if (!PAGOS.includes(o.canal)) continue;
+    const r = get(chaveGrupo(o.canal, o.ad, o.campanha, o.conjunto, o.criativo), o.canal);
+    r.leads++; if (sucesso(l)) r.suc++;
+  }
+  const list = [...rows.values()].map((r) => ({
+    ...r, taxa: r.leads ? r.suc / r.leads : 0, cpl: r.leads ? r.gasto / r.leads : null,
+    cps: r.suc ? r.gasto / r.suc : null, v: veredito(r.gasto, r.suc),
+  }));
+  const { k, dir } = S.sort;
+  list.sort((a, b) => ((a[k] ?? -1) > (b[k] ?? -1) ? 1 : (a[k] ?? -1) < (b[k] ?? -1) ? -1 : 0) * dir);
+  const et = $("f-sucesso").value.toLowerCase();
+  const th = (key, label, r) => `<th class="sort ${r ? "r" : ""}" data-k="${key}">${label}${S.sort.k === key ? (S.sort.dir < 0 ? " ▾" : " ▴") : ""}</th>`;
+  $("rank").innerHTML = `<thead><tr>${th("nome", S.grupo[0].toUpperCase() + S.grupo.slice(1))}${th("gasto", "Gasto", 1)}${th("leads", "Leads", 1)}${th("suc", "Sucessos", 1)}${th("taxa", `% ${esc(et)}`, 1)}${th("cpl", "CPL", 1)}${th("cps", "Custo por sucesso", 1)}<th>Veredito</th></tr></thead><tbody>` +
+    (list.length ? list.map((r) => `<tr class="v-${r.v}"><td>${esc(r.nome)}<span class="sub">${esc(r.canal)} | ${esc(r.sub)}</span></td><td class="r num">${brl(r.gasto)}</td><td class="r num">${int(r.leads)}</td><td class="r num">${int(r.suc)}</td><td class="r num">${pct(r.suc, r.leads)}</td><td class="r num">${brl(r.cpl)}</td><td class="r num">${brl(r.cps)}</td><td><span class="tag t-${r.v}">${VEREDITO_TXT[r.v]}</span></td></tr>`).join("")
+      : `<tr><td colspan="8" class="empty">Sem gasto nem leads de mídia paga neste período.</td></tr>`) + "</tbody>";
+  $("rank").querySelectorAll("th.sort").forEach((t) => t.onclick = () => {
+    S.sort = { k: t.dataset.k, dir: S.sort.k === t.dataset.k ? -S.sort.dir : -1 }; renderRank();
+  });
+}
+
+function renderFunil() {
+  const etapas = S.etapas.filter((e) => e.nome !== "Perdido").slice(0, 6);
+  const by = new Map();
+  for (const l of leadsFiltrados()) {
+    const c = origem(l).canal;
+    if (!by.has(c)) by.set(c, { canal: c, leads: [], gasto: 0 });
+    by.get(c).leads.push(l);
+  }
+  for (const c of custosFiltrados()) {
+    const k = canalDoCusto(c);
+    if (!by.has(k)) by.set(k, { canal: k, leads: [], gasto: 0 });
+    by.get(k).gasto += Number(c.gasto);
+  }
+  const et = $("f-sucesso").value;
+  const list = [...by.values()].sort((a, b) => b.leads.length - a.leads.length);
+  $("funil").innerHTML = `<thead><tr><th>Canal</th><th class="r">Leads</th>${etapas.map((e) => `<th class="r">${esc(e.nome)}</th>`).join("")}<th class="r">Gasto</th><th class="r">Custo por ${esc(et.toLowerCase())}</th></tr></thead><tbody>` +
+    (list.length ? list.map((g) => {
+      const suc = g.leads.filter(sucesso).length;
+      return `<tr><td>${esc(g.canal)}</td><td class="r num">${int(g.leads.length)}</td>${etapas.map((e) => {
+        const n = g.leads.filter((l) => chegou(l, e.nome)).length;
+        return `<td class="r num">${int(n)}<span class="sub">${pct(n, g.leads.length)}</span></td>`;
+      }).join("")}<td class="r num">${g.gasto ? brl(g.gasto) : "-"}</td><td class="r num">${g.gasto && suc ? brl(g.gasto / suc) : "-"}</td></tr>`;
+    }).join("") : `<tr><td colspan="${etapas.length + 4}" class="empty">Nenhum lead neste período.</td></tr>`) + "</tbody>";
+}
+
+const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const FAIXAS = ["0h", "6h", "8h", "10h", "12h", "14h", "16h", "18h", "20h", "22h"];
+function diaHora(iso) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short", hour: "numeric", hourCycle: "h23" })
+    .formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+  const d = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }[p.weekday];
+  const h = Number(p.hour);
+  const f = h < 6 ? 0 : Math.min(9, Math.floor((h - 6) / 2) + 1);
+  return [d, f];
+}
+function renderHeat() {
+  const m = DIAS.map(() => FAIXAS.map(() => 0));
+  for (const l of leadsFiltrados()) {
+    if (S.heat === "sucesso" && !sucesso(l)) continue;
+    const [d, f] = diaHora(l.created_at); m[d][f]++;
+  }
+  const max = Math.max(1, ...m.flat());
+  let h = `<span></span>` + FAIXAS.map((f) => `<span class="h">${f}</span>`).join("");
+  m.forEach((row, i) => {
+    h += `<span style="align-self:center">${DIAS[i]}</span>` + row.map((v) => {
+      const a = v / max;
+      return `<div class="c num" title="${v} ${S.heat === "leads" ? "leads" : "sucessos"}" style="background:rgba(19,35,63,${(0.05 + a * 0.9).toFixed(2)});color:${a > 0.5 ? "#fff" : "var(--ink)"}">${v || ""}</div>`;
+    }).join("");
+  });
+  $("heat").innerHTML = h;
+}
+
+function renderTrend() {
+  const de = new Date($("f-de").value + "T12:00:00-03:00"), ate = new Date($("f-ate").value + "T12:00:00-03:00");
+  const dias = [];
+  for (let d = new Date(de); d <= ate; d = new Date(d.getTime() + 86400000)) dias.push(d.toLocaleDateString("sv-SE", { timeZone: TZ }));
+  const leads = Object.fromEntries(dias.map((d) => [d, 0])), suc = { ...leads };
+  for (const l of leadsFiltrados()) {
+    const d = new Date(l.created_at).toLocaleDateString("sv-SE", { timeZone: TZ });
+    if (d in leads) { leads[d]++; if (sucesso(l)) suc[d]++; }
+  }
+  const labels = dias.map((d) => d.slice(8, 10) + "/" + d.slice(5, 7));
+  if (chart) chart.destroy();
+  chart = new Chart($("trend"), {
+    type: "line",
+    data: { labels, datasets: [
+      { label: "Leads", data: Object.values(leads), borderColor: "#13233F", backgroundColor: "#13233F", tension: .25, pointRadius: 0, borderWidth: 2 },
+      { label: $("f-sucesso").value, data: Object.values(suc), borderColor: "#B8892B", backgroundColor: "#B8892B", tension: .25, pointRadius: 0, borderWidth: 2 },
+    ] },
+    options: { maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { labels: { boxWidth: 10, font: { family: "Archivo" } } } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } } } },
+  });
+}
+
+function leadsDaLista() {
+  const q = $("l-q").value.trim().toLowerCase();
+  return leadsFiltrados().filter((l) => !q || [l.nome, l.escola, l.telefone_e164, l.email, l.ft_campanha, l.ft_criativo, l.lp_campanha, l.executivo]
+    .some((v) => (v || "").toLowerCase().includes(q)));
+}
+function renderLeads() {
+  const L = leadsDaLista();
+  const vis = L.slice(0, S.shown);
+  $("leads").innerHTML = `<thead><tr><th>Entrada</th><th>Lead</th><th>Canal</th><th>Campanha e criativo</th><th>Etapa</th><th>Executivo</th></tr></thead><tbody>` +
+    (vis.length ? vis.map((l) => { const o = origem(l); return `<tr class="click" data-id="${l.id}" tabindex="0"><td class="num" style="white-space:nowrap">${fmtDT(l.created_at)}</td><td>${esc(l.escola || l.nome || "Sem nome")}<span class="sub">${esc(l.telefone_e164 || l.email || "")}</span></td><td>${esc(o.canal)}</td><td>${esc(o.campanha || "-")}<span class="sub">${esc(o.criativo || "")}</span></td><td>${esc(etapaAtual(l))}</td><td>${esc(l.executivo || "-")}</td></tr>`; }).join("")
+      : `<tr><td colspan="6" class="empty">Nenhum lead encontrado. Ajuste o período ou a busca.</td></tr>`) + "</tbody>";
+  $("l-more").classList.toggle("hidden", L.length <= S.shown);
+  $("leads").querySelectorAll("tr.click").forEach((tr) => {
+    tr.onclick = () => openLead(tr.dataset.id);
+    tr.onkeydown = (e) => { if (e.key === "Enter") openLead(tr.dataset.id); };
+  });
+}
+
+async function openLead(id) {
+  const l = S.leads.find((x) => x.id === id);
+  if (!l) return;
+  $("d-nome").textContent = l.escola || l.nome || "Sem nome";
+  $("d-sub").textContent = [l.nome !== l.escola ? l.nome : null, l.telefone_e164, l.email].filter(Boolean).join(" | ");
+  $("d-facts").innerHTML = [
+    ["Primeiro toque", [l.ft_canal, l.ft_campanha, l.ft_criativo].filter(Boolean).join(" | ") || "-"],
+    ["Último pago", [l.lp_canal, l.lp_campanha, l.lp_criativo].filter(Boolean).join(" | ") || "Nenhum"],
+    ["Entrada", fmtDT(l.created_at)],
+    ["Etapa", etapaAtual(l)],
+    ["Executivo", l.executivo || "-"],
+    ["Ploomes", l.ploomes_deal_id ? "#" + l.ploomes_deal_id : "Ainda sem negócio"],
+  ].map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+  $("d-tl").innerHTML = `<li class="d">Carregando...</li>`;
+  $("drawer").classList.add("open");
+  if (DEMO) {
+    const o = origem(l);
+    const items = [
+      [l.created_at, "toque", `Primeiro toque: ${o.canal}`, [o.campanha, o.criativo].filter(Boolean).join(" | ")],
+      [l.created_at, "etapa", "Lead criado", "Entrada associada automaticamente à origem"],
+      ...Object.entries(l.etapas || {}).filter(([k]) => k !== "Lead").map(([k, at]) => [at, "etapa", `Etapa: ${k}`, `Atualização recebida do Ploomes por ${l.executivo}`]),
+    ].sort((a, b) => new Date(a[0]) - new Date(b[0]));
+    $("d-tl").innerHTML = items.map((t) => `<li class="${t[1]}"><div class="when">${fmtDT(t[0])}</div><div class="t">${esc(t[2])}</div><div class="d">${esc(t[3])}</div></li>`).join("");
+    return;
+  }
+  const { data, error } = await sb.from("v_timeline").select("*").eq("lead_id", id).order("occurred_at");
+  $("d-tl").innerHTML = error ? `<li>Não foi possível carregar a linha do tempo.</li>` :
+    (data.length ? data.map((t) => `<li class="${t.tipo}"><div class="when">${fmtDT(t.occurred_at)}</div><div class="t">${esc(t.titulo)}</div><div class="d">${esc(t.detalhe || "")}</div></li>`).join("") : `<li>Sem eventos registrados.</li>`);
+}
+
+function exportCsv() {
+  const cols = ["created_at", "escola", "nome", "telefone_e164", "email", "ft_canal", "ft_campanha", "ft_conjunto", "ft_criativo", "ft_at", "lp_canal", "lp_campanha", "lp_criativo", "executivo", "ploomes_deal_id"];
+  const lines = [cols.concat(["etapa_atual"]).join(";")].concat(leadsDaLista().map((l) =>
+    cols.map((c) => `"${String(l[c] ?? "").replace(/"/g, '""')}"`).concat(`"${etapaAtual(l)}"`).join(";")));
+  const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `leads_${$("f-de").value}_${$("f-ate").value}.csv`; a.click();
+}
+
+// ------------------------------------------------------------ eventos
+function bind() {
+  const hoje = new Date().toLocaleDateString("sv-SE", { timeZone: TZ });
+  $("f-ate").value = hoje;
+  $("f-de").value = hoje.slice(0, 8) + "01";
+  $("s-meta").value = S.cfg.meta; $("s-min").value = S.cfg.min;
+  $("f-go").onclick = load;
+  ["f-canal", "f-modelo", "f-sucesso"].forEach((id) => $(id).onchange = () => { localStorage.setItem("kt_sucesso", $("f-sucesso").value); render(); });
+  ["s-meta", "s-min"].forEach((id) => $(id).oninput = () => {
+    S.cfg = { meta: Number($("s-meta").value) || 0, min: Number($("s-min").value) || 0 };
+    localStorage.setItem("kt_cfg", JSON.stringify(S.cfg)); renderRank();
+  });
+  $("g-seg").querySelectorAll("button").forEach((b) => b.onclick = () => {
+    S.grupo = b.dataset.g; $("g-seg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); renderRank();
+  });
+  $("h-seg").querySelectorAll("button").forEach((b) => b.onclick = () => {
+    S.heat = b.dataset.h; $("h-seg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); renderHeat();
+  });
+  $("l-q").oninput = () => { S.shown = 100; renderLeads(); };
+  $("l-more").onclick = () => { S.shown += 100; renderLeads(); };
+  $("l-csv").onclick = exportCsv;
+  $("d-close").onclick = () => $("drawer").classList.remove("open");
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("drawer").classList.remove("open"); });
+  $("f-out").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  $("lg-btn").onclick = async () => {
+    $("lg-err").textContent = "";
+    const { error } = await sb.auth.signInWithPassword({ email: $("lg-email").value, password: $("lg-pass").value });
+    if (error) $("lg-err").textContent = "E-mail ou senha incorretos.";
+    else showApp();
+  };
+  $("lg-pass").onkeydown = (e) => { if (e.key === "Enter") $("lg-btn").click(); };
+}
+
+function showApp() { $("login").classList.add("hidden"); $("app").classList.remove("hidden"); load(); }
+
+bind();
+if (DEMO) {
+  $("demo-note").classList.remove("hidden");
+  $("f-out").classList.add("hidden");
+  showApp();
+} else {
+  sb.auth.getSession().then(({ data }) => data.session ? showApp() : $("login").classList.remove("hidden"));
+}
+</script>
+</body>
+</html>
